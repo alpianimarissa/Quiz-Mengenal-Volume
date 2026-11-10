@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Interaktif Volume & Kubus Satuan - Kelas 4 SD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .isometric-svg { filter: drop-shadow(0px 3px 4px rgba(0,0,0,0.15)); }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        .q-card-step { display: none; }
+        .q-card-step.active { display: block; }
+    </style>
+</head>
+<body class="bg-amber-500/10 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header Navbar -->
+    <header class="bg-gradient-to-r from-teal-600 via-emerald-600 to-indigo-700 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-2">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/20 p-2 rounded-2xl text-2xl">🏆</div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-extrabold tracking-wide">Kuis Interaktif Satuan Volume</h1>
+                    <p class="text-xs text-emerald-100">Matematika Kelas 4 SD/MI • 30 Soal Isian</p>
+                </div>
+            </div>
+
+            <!-- Total Score & Status Bar -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-black/20 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-sm flex items-center gap-1.5">
+                    <span id="save-status" class="text-emerald-300">🟢 Tersimpan Otomatis</span>
+                </div>
+                <div class="bg-white text-slate-900 px-4 py-1.5 rounded-xl text-sm font-extrabold shadow-sm border border-emerald-200">
+                    Skor: <span id="total-score" class="text-emerald-600">0</span> / 30
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- Category Selector Nav -->
+        <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200 flex flex-wrap gap-2 justify-center text-xs font-bold">
+            <button onclick="filterCategory('all')" id="btn-cat-all" class="cat-btn px-3.5 py-2 rounded-xl bg-slate-900 text-white transition-all">Semua Soal (30)</button>
+            <button onclick="filterCategory('konversi')" id="btn-cat-konversi" class="cat-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all">🔄 Konversi (1-5)</button>
+            <button onclick="filterCategory('penggunaan')" id="btn-cat-penggunaan" class="cat-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all">🥤 Penggunaan Satuan (6-10)</button>
+            <button onclick="filterCategory('perbandingan')" id="btn-cat-perbandingan" class="cat-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all">⚖️ Perbandingan (11-15)</button>
+            <button onclick="filterCategory('kubus')" id="btn-cat-kubus" class="cat-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all">🧊 Menghitung Kubus (16-30)</button>
+        </div>
+
+        <!-- Quick Question Number Grid Navigator -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-3">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Navigasi Nomor Soal</span>
+                <button onclick="resetAllProgress()" class="text-xs text-rose-600 font-bold hover:underline">🔄 Reset Jawaban Saya</button>
+            </div>
+            <div id="nav-grid" class="flex flex-wrap gap-1.5 md:gap-2">
+                <!-- Question buttons will be rendered by JS -->
+            </div>
+        </div>
+
+        <!-- Single Active Question Container -->
+        <div id="questions-container" class="min-h-[380px]">
+            <!-- Questions rendered via JS -->
+        </div>
+
+        <!-- Navigation Controls: Prev & Next -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex justify-between items-center">
+            <button id="btn-prev" onclick="prevQuestion()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-5 py-2.5 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2">
+                ⬅️ Sebelumnya
+            </button>
+            <span id="question-progress-indicator" class="text-xs font-bold text-slate-500">Soal 1 dari 30</span>
+            <button id="btn-next" onclick="nextQuestion()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs md:text-sm transition-all flex items-center gap-2 shadow-sm">
+                Selanjutnya ➡️
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-8 text-center text-xs text-slate-500">
+        <p>Kuis Interaktif Matematika Kelas 4 SD/MI • Dilengkapi Fitur Penyimpanan Otomatis</p>
+    </footer>
+
+    <!-- JavaScript Data & Engine -->
+    <script>
+        // 30 Question Dataset (Tanpa Hint)
+        const quizData = [
+            // BAGIAN 1: KONVERSI SATUAN VOLUME (1 - 5)
+            {
+                id: 1,
+                cat: 'konversi',
+                title: 'Soal 1: Konversi Liter ke Mililiter',
+                type: 'text',
+                desc: 'Sebuah botol mineral berisi <strong>3 Liter</strong> air manis. Berapa <strong>mililiter (ml)</strong> volume air mineral tersebut?',
+                answer: ['3000', '3.000', '3000 ml', '3000ml'],
+                unitLabel: 'ml'
+            },
+            {
+                id: 2,
+                cat: 'konversi',
+                title: 'Soal 2: Konversi Mililiter ke Liter',
+                type: 'text',
+                desc: 'Ibu memiliki sirup sebanyak <strong>5.000 mililiter (ml)</strong> di dalam wadah. Berapa <strong>Liter (l)</strong> volume sirup ibu?',
+                answer: ['5', '5 l', '5 liter', '5Liter'],
+                unitLabel: 'Liter'
+            },
+            {
+                id: 3,
+                cat: 'konversi',
+                title: 'Soal 3: Konversi Campuran Liter dan ml',
+                type: 'text',
+                desc: 'Bagas membeli <strong>2 Liter</strong> jus mangga. Ia sudah meminum <strong>500 ml</strong>. Sisa jus Bagas sekarang adalah ... <strong>ml</strong>.',
+                answer: ['1500', '1.500', '1500 ml', '1500ml'],
+                unitLabel: 'ml'
+            },
+            {
+                id: 4,
+                cat: 'konversi',
+                title: 'Soal 4: Konversi ml ke Sentimeter Kubik',
+                type: 'text',
+                desc: 'Satu botol obat batuk memiliki volume <strong>150 ml</strong>. Berapakah volume obat tersebut dalam satuan <strong>cm³ (sentimeter kubik)</strong>?',
+                answer: ['150', '150 cm3', '150 cm³', '150cm3'],
+                unitLabel: 'cm³'
+            },
+            {
+                id: 5,
+                cat: 'konversi',
+                title: 'Soal 5: Konversi Kiloliter ke Liter',
+                type: 'text',
+                desc: 'Sebuah tangki air bersih di perumahan menampung <strong>4 Kiloliter (kl)</strong> air. Berapa <strong>Liter (l)</strong> volume air dalam tangki tersebut?',
+                answer: ['4000', '4.000', '4000 l', '4000 liter'],
+                unitLabel: 'Liter'
+            },
+
+            // BAGIAN 2: PENGGUNAAN SATUAN VOLUME PALING TEPAT (6 - 10)
+            {
+                id: 6,
+                cat: 'penggunaan',
+                title: 'Soal 6: Satuan Pengukur Dosis Obat Sirup',
+                type: 'text',
+                desc: 'Dokter memberi Dika petunjuk minum obat sirup sebanyak 1 sendok takar. Satuan volume yang paling tepat digunakan untuk dosis obat sirup adalah ... (Pilih: <strong>liter</strong> / <strong>mililiter</strong> / <strong>meter kubik</strong>)',
+                answer: ['mililiter', 'ml', 'Mililiter'],
+                unitLabel: ''
+            },
+            {
+                id: 7,
+                cat: 'penggunaan',
+                title: 'Soal 7: Satuan Takaran Air Kolam Renang',
+                type: 'text',
+                desc: 'Petugas mengisi air di kolam renang umum berukuran besar. Satuan volume baku yang paling tepat untuk mengukur air satu kolam renang penuh adalah ... (Pilih: <strong>mililiter</strong> / <strong>liter</strong> / <strong>tetes</strong>)',
+                answer: ['liter', 'l', 'Liter'],
+                unitLabel: ''
+            },
+            {
+                id: 8,
+                cat: 'penggunaan',
+                title: 'Soal 8: Pengukuran Volume Tidak Baku',
+                type: 'text',
+                desc: 'Rani mengukur isi sebuah teko manis menggunakan wadah kecil berupa <strong>cangkir</strong>. Jenis pengukuran volume yang dilakukan Rani termasuk satuan ... (Pilih: <strong>baku</strong> / <strong>tidak baku</strong>)',
+                answer: ['tidak baku', 'tidakbaku', 'Tidak Baku'],
+                unitLabel: ''
+            },
+            {
+                id: 9,
+                cat: 'penggunaan',
+                title: 'Soal 9: Satuan Kotak Susu UHT Kecil',
+                type: 'text',
+                desc: 'Di kemasan kotak susu UHT bekal sekolah tertulis angka "200 ...". Satuan volume yang paling tepat untuk melengkapi tulisan kemasan tersebut adalah ... (Pilih: <strong>liter</strong> / <strong>mililiter</strong> / <strong>meter</strong>)',
+                answer: ['mililiter', 'ml', 'Mililiter'],
+                unitLabel: ''
+            },
+            {
+                id: 10,
+                cat: 'penggunaan',
+                title: 'Soal 10: Satuan Volume Benda Padat Berbentuk Kubus',
+                type: 'text',
+                desc: 'Untuk menyatakan volume benda padat seperti tumpukan balok mainan kayu kecil, satuan yang paling tepat digunakan adalah ... (Pilih: <strong>kubus satuan</strong> / <strong>gelas</strong> / <strong>tetes</strong>)',
+                answer: ['kubus satuan', 'kubussatuan', 'Kubus Satuan'],
+                unitLabel: ''
+            },
+
+            // BAGIAN 3: MENENTUKAN PERBANDINGAN VOLUME (11 - 15)
+            {
+                id: 11,
+                cat: 'perbandingan',
+                title: 'Soal 11: Membandingkan 2 Liter dan 1.500 ml',
+                type: 'text',
+                desc: 'Bandingkan volume berikut: <strong>2 Liter</strong> ... <strong>1.500 ml</strong>. Isilah titik-titik dengan tanda <strong>></strong> (lebih besar), <strong><</strong> (lebih kecil), atau <strong>=</strong> (sama dengan)!',
+                answer: ['>', 'lebih besar'],
+                unitLabel: ''
+            },
+            {
+                id: 12,
+                cat: 'perbandingan',
+                title: 'Soal 12: Membandingkan 500 ml dan 1 Liter',
+                type: 'text',
+                desc: 'Bandingkan volume berikut: <strong>500 ml</strong> ... <strong>1 Liter</strong>. Isilah titik-titik dengan tanda <strong>></strong>, <strong><</strong>, atau <strong>=</strong>!',
+                answer: ['<', 'lebih kecil'],
+                unitLabel: ''
+            },
+            {
+                id: 13,
+                cat: 'perbandingan',
+                title: 'Soal 13: Membandingkan 3.000 ml dan 3 Liter',
+                type: 'text',
+                desc: 'Bandingkan volume berikut: <strong>3.000 ml</strong> ... <strong>3 Liter</strong>. Isilah titik-titik dengan tanda <strong>></strong>, <strong><</strong>, atau <strong>=</strong>!',
+                answer: ['=', 'sama dengan'],
+                unitLabel: ''
+            },
+            {
+                id: 14,
+                cat: 'perbandingan',
+                title: 'Soal 14: Perbandingan Isi Botol A dan Botol B',
+                type: 'text',
+                desc: 'Botol A berisi <strong>4 gelas</strong> air. Botol B berisi <strong>6 gelas</strong> air dengan ukuran gelas yang sama. Botol manakah yang memiliki volume <strong>lebih besar</strong>? (Tulis: <strong>Botol A</strong> / <strong>Botol B</strong>)',
+                answer: ['Botol B', 'botol b', 'B', 'b'],
+                unitLabel: ''
+            },
+            {
+                id: 15,
+                cat: 'perbandingan',
+                title: 'Soal 15: Membandingkan 4 ml dan 4 cm³',
+                type: 'text',
+                desc: 'Bandingkan volume berikut: <strong>4 ml</strong> ... <strong>4 cm³</strong>. Isilah dengan tanda <strong>></strong>, <strong><</strong>, atau <strong>=</strong>!',
+                answer: ['=', 'sama dengan'],
+                unitLabel: ''
+            },
+
+            // BAGIAN 4: 15 SOAL MENENTUKAN BANYAKNYA KUBUS TERTUMPUK (16 - 30)
+            {
+                id: 16,
+                cat: 'kubus',
+                title: 'Soal 16: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 3,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan berikut?',
+                structure: [
+                    {x: 0, y: 0, z: 0},
+                    {x: 1, y: 0, z: 0},
+                    {x: 0, y: 0, z: 1}
+                ],
+                answer: ['3', '3 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 17,
+                cat: 'kubus',
+                title: 'Soal 17: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 4,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan berikut?',
+                structure: [
+                    {x: 0, y: 0, z: 0},
+                    {x: 1, y: 0, z: 0},
+                    {x: 0, y: 1, z: 0},
+                    {x: 1, y: 1, z: 0}
+                ],
+                answer: ['4', '4 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 18,
+                cat: 'kubus',
+                title: 'Soal 18: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 5,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan berikut?',
+                structure: [
+                    {x: 0, y: 0, z: 0},
+                    {x: 1, y: 0, z: 0},
+                    {x: 2, y: 0, z: 0},
+                    {x: 0, y: 0, z: 1},
+                    {x: 1, y: 0, z: 1}
+                ],
+                answer: ['5', '5 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 19,
+                cat: 'kubus',
+                title: 'Soal 19: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 6,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan bertangga ini?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1},
+                    {x: 0, y: 0, z: 2}
+                ],
+                answer: ['6', '6 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 20,
+                cat: 'kubus',
+                title: 'Soal 20: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 6,
+                desc: 'Berapakah banyaknya kubus satuan pada bentuk balok alas 2x3 ini?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0},
+                    {x: 0, y: 1, z: 0}, {x: 1, y: 1, z: 0}, {x: 2, y: 1, z: 0}
+                ],
+                answer: ['6', '6 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 21,
+                cat: 'kubus',
+                title: 'Soal 21: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 7,
+                desc: 'Berapakah banyaknya kubus satuan pada bentuk tumpukan ini?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 0, y: 1, z: 0}, {x: 1, y: 1, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1},
+                    {x: 0, y: 0, z: 2}
+                ],
+                answer: ['7', '7 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 22,
+                cat: 'kubus',
+                title: 'Soal 22: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 8,
+                desc: 'Berapakah banyaknya kubus satuan pada bentuk kubus 2x2x2 berikut?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 0, y: 1, z: 0}, {x: 1, y: 1, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1}, {x: 0, y: 1, z: 1}, {x: 1, y: 1, z: 1}
+                ],
+                answer: ['8', '8 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 23,
+                cat: 'kubus',
+                title: 'Soal 23: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 8,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan huruf U sederhana ini?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: 2},
+                    {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0},
+                    {x: 2, y: 0, z: 1}, {x: 2, y: 0, z: 2}, {x: 1, y: 0, z: 1}
+                ],
+                answer: ['8', '8 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 24,
+                cat: 'kubus',
+                title: 'Soal 24: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 9,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan berikut?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0},
+                    {x: 0, y: 1, z: 0}, {x: 1, y: 1, z: 0}, {x: 2, y: 1, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1}, {x: 2, y: 0, z: 1}
+                ],
+                answer: ['9', '9 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 25,
+                cat: 'kubus',
+                title: 'Soal 25: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 9,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan piramida bertangga ini?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0}, {x: 3, y: 0, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1}, {x: 2, y: 0, z: 1},
+                    {x: 0, y: 0, z: 2}, {x: 1, y: 0, z: 2}
+                ],
+                answer: ['9', '9 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 26,
+                cat: 'kubus',
+                title: 'Soal 26: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 10,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan berikut?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0},
+                    {x: 0, y: 1, z: 0}, {x: 1, y: 1, z: 0}, {x: 2, y: 1, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1},
+                    {x: 0, y: 0, z: 2}, {x: 1, y: 0, z: 2}
+                ],
+                answer: ['10', '10 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 27,
+                cat: 'kubus',
+                title: 'Soal 27: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 11,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan berikut?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0},
+                    {x: 0, y: 1, z: 0}, {x: 1, y: 1, z: 0}, {x: 2, y: 1, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1}, {x: 2, y: 0, z: 1},
+                    {x: 0, y: 0, z: 2}, {x: 1, y: 0, z: 2}
+                ],
+                answer: ['11', '11 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 28,
+                cat: 'kubus',
+                title: 'Soal 28: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 12,
+                desc: 'Berapakah banyaknya kubus satuan pada balok berukuran 3x2x2 ini?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0},
+                    {x: 0, y: 1, z: 0}, {x: 1, y: 1, z: 0}, {x: 2, y: 1, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1}, {x: 2, y: 0, z: 1},
+                    {x: 0, y: 1, z: 1}, {x: 1, y: 1, z: 1}, {x: 2, y: 1, z: 1}
+                ],
+                answer: ['12', '12 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 29,
+                cat: 'kubus',
+                title: 'Soal 29: Menghitung Kubus Satuan',
+                type: 'cubes',
+                cubesCount: 13,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan bertingkat ini?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0},
+                    {x: 0, y: 1, z: 0}, {x: 1, y: 1, z: 0}, {x: 2, y: 1, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1}, {x: 2, y: 0, z: 1},
+                    {x: 0, y: 1, z: 1}, {x: 1, y: 1, z: 1},
+                    {x: 0, y: 0, z: 2}, {x: 1, y: 0, z: 2}
+                ],
+                answer: ['13', '13 kubus'],
+                unitLabel: 'kubus'
+            },
+            {
+                id: 30,
+                cat: 'kubus',
+                title: 'Soal 30: Menghitung Kubus Satuan Tantangan',
+                type: 'cubes',
+                cubesCount: 15,
+                desc: 'Berapakah banyaknya kubus satuan pada tumpukan tangga bertingkat 5 langkah ini?',
+                structure: [
+                    {x: 0, y: 0, z: 0}, {x: 1, y: 0, z: 0}, {x: 2, y: 0, z: 0}, {x: 3, y: 0, z: 0}, {x: 4, y: 0, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 1, y: 0, z: 1}, {x: 2, y: 0, z: 1}, {x: 3, y: 0, z: 1},
+                    {x: 0, y: 0, z: 2}, {x: 1, y: 0, z: 2}, {x: 2, y: 0, z: 2},
+                    {x: 0, y: 0, z: 3}, {x: 1, y: 0, z: 3},
+                    {x: 0, y: 0, z: 4}
+                ],
+                answer: ['15', '15 kubus'],
+                unitLabel: 'kubus'
+            }
+        ];
+
+        // State Variables
+        let userAnswers = {};
+        let activeQuestionId = 1;
+        let currentFilterList = quizData;
+        const STORAGE_KEY = 'volume_quiz_answers_v1';
+
+        function loadAnswers() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    userAnswers = JSON.parse(saved);
+                } catch(e) {
+                    userAnswers = {};
+                }
+            }
+        }
+
+        function saveAnswers() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(userAnswers));
+            const statusEl = document.getElementById('save-status');
+            statusEl.textContent = '🟢 Tersimpan Otomatis';
+            statusEl.className = 'text-emerald-300 transition-all';
+        }
+
+        // SVG Renderer for Stacked Cubes (Presisi Isometrik Lembar Kerja)
+        function generateCubesSVG(structure) {
+            // Urutkan kubus dari paling belakang ke paling depan agar layering SVG pas
+            const sorted = [...structure].sort((a, b) => {
+                if (a.z !== b.z) return a.z - b.z; // Dari bawah ke atas
+                if ((a.x + a.y) !== (b.x + b.y)) return (a.x + a.y) - (b.x + b.y); // Dari belakang ke depan
+                return a.x - b.x;
+            });
+
+            // Hitung bounds untuk pengetengahan visual otomatis
+            let minIsoX = Infinity, maxIsoX = -Infinity;
+            let minIsoY = Infinity, maxIsoY = -Infinity;
+
+            const unitW = 20; // Setengah lebar kubus
+            const unitH = 10; // Setengah tinggi proyeksi atas
+            const cubeH = 22; // Tinggi tegak lurus kubus
+
+            sorted.forEach(c => {
+                const ix = (c.x - c.y) * unitW;
+                const iy = (c.x + c.y) * unitH - (c.z * cubeH);
+                if (ix < minIsoX) minIsoX = ix;
+                if (ix > maxIsoX) maxIsoX = ix;
+                if (iy < minIsoY) minIsoY = iy;
+                if (iy > maxIsoY) maxIsoY = iy;
+            });
+
+            const originX = 125 - (minIsoX + maxIsoX) / 2;
+            const originY = 100 - (minIsoY + maxIsoY) / 2 + 10;
+
+            let svgContent = '';
+
+            sorted.forEach(c => {
+                const px = originX + (c.x - c.y) * unitW;
+                const py = originY + (c.x + c.y) * unitH - (c.z * cubeH);
+
+                // Poligon 3 Sisi Kubus Satuan
+                const topFace = `${px},${py - cubeH} ${px + unitW},${py - cubeH + unitH} ${px},${py - cubeH + 2 * unitH} ${px - unitW},${py - cubeH + unitH}`;
+                const leftFace = `${px - unitW},${py - cubeH + unitH} ${px},${py - cubeH + 2 * unitH} ${px},${py + 2 * unitH} ${px - unitW},${py + unitH}`;
+                const rightFace = `${px},${py - cubeH + 2 * unitH} ${px + unitW},${py - cubeH + unitH} ${px + unitW},${py + unitH} ${px},${py + 2 * unitH}`;
+
+                svgContent += `
+                    <g class="cube-group">
+                        <!-- Top Face (Pink) -->
+                        <polygon points="${topFace}" fill="#ff758f" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
+                        <!-- Left Face (Yellow/Orange) -->
+                        <polygon points="${leftFace}" fill="#ffb703" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
+                        <!-- Right Face (Blue) -->
+                        <polygon points="${rightFace}" fill="#4ea8de" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
+                    </g>
+                `;
+            });
+
+            return `
+                <svg width="220" height="190" viewBox="0 0 250 200" class="isometric-svg mx-auto">
+                    ${svgContent}
+                </svg>
+            `;
+        }
+
+        // Render Nav Grid Buttons
+        function renderNavGrid() {
+            const navGrid = document.getElementById('nav-grid');
+            navGrid.innerHTML = '';
+
+            currentFilterList.forEach(q => {
+                const btn = document.createElement('button');
+                btn.id = `nav-btn-${q.id}`;
+                btn.onclick = () => showQuestion(q.id);
+                
+                const isAnswered = userAnswers[q.id] !== undefined;
+                let bgClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                
+                if (isAnswered) {
+                    if (userAnswers[q.id].isCorrect) {
+                        bgClass = 'bg-emerald-500 text-white border-emerald-600 font-bold';
+                    } else {
+                        bgClass = 'bg-rose-500 text-white border-rose-600 font-bold';
+                    }
+                }
+
+                if (q.id === activeQuestionId) {
+                    bgClass += ' ring-2 ring-indigo-600 ring-offset-2';
+                }
+
+                btn.className = `w-9 h-9 text-xs rounded-xl border flex items-center justify-center transition-all ${bgClass} hover:scale-105`;
+                btn.textContent = q.id;
+                navGrid.appendChild(btn);
+            });
+        }
+
+        // Render Question Cards
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            currentFilterList.forEach(q => {
+                const card = document.createElement('div');
+                card.id = `q-card-${q.id}`;
+                const isActive = q.id === activeQuestionId;
+                card.className = `q-card-step ${isActive ? 'active' : ''} bg-white rounded-2xl p-5 md:p-7 shadow-sm border border-slate-200 transition-all`;
+
+                let visualHTML = '';
+                if (q.type === 'cubes') {
+                    visualHTML = `
+                        <div class="bg-amber-500/5 p-4 rounded-xl border border-slate-900/10 mb-4 flex justify-center">
+                            ${generateCubesSVG(q.structure)}
+                        </div>
+                    `;
+                }
+
+                const savedData = userAnswers[q.id] || { text: '', isCorrect: null };
+                
+                let feedbackHTML = '';
+                if (savedData.isCorrect !== null) {
+                    if (savedData.isCorrect) {
+                        feedbackHTML = `<div class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-700 flex items-center gap-2">🎉 Jawaban Kamu BENAR! Sangat Hebat!</div>`;
+                    } else {
+                        feedbackHTML = `<div class="mt-3 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 flex items-center gap-2">❌ Jawaban Belum Tepat. Coba periksa kembali ya!</div>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="inline-block bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-full">Soal #${q.id}</span>
+                    </div>
+
+                    <h3 class="font-bold text-slate-900 text-base md:text-lg mb-2">${q.title}</h3>
+                    <p class="text-slate-600 text-xs md:text-sm leading-relaxed mb-4">${q.desc}</p>
+
+                    ${visualHTML}
+
+                    <!-- Input Section -->
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <label class="block text-xs font-bold text-slate-500 uppercase">Jawaban Kamu:</label>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input type="text" id="input-${q.id}" value="${savedData.text}" placeholder="Tulis jawaban..." 
+                                class="flex-grow max-w-md px-4 py-2.5 text-sm md:text-base font-semibold border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
+                            ${q.unitLabel ? `<span class="font-bold text-slate-700 text-sm">${q.unitLabel}</span>` : ''}
+                            <button onclick="checkAnswer(${q.id})" class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition-all shadow-sm">
+                                Periksa Jawaban
+                            </button>
+                        </div>
+                        <div id="feedback-${q.id}">${feedbackHTML}</div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            updateNavigationState();
+            updateScoreUI();
+        }
+
+        // Show Single Question Step
+        function showQuestion(qId) {
+            activeQuestionId = qId;
+            document.querySelectorAll('.q-card-step').forEach(card => card.classList.remove('active'));
+            const activeCard = document.getElementById(`q-card-${qId}`);
+            if (activeCard) activeCard.classList.add('active');
+            
+            renderNavGrid();
+            updateNavigationState();
+        }
+
+        function updateNavigationState() {
+            const currentIndex = currentFilterList.findIndex(q => q.id === activeQuestionId);
+            const prevBtn = document.getElementById('btn-prev');
+            const nextBtn = document.getElementById('btn-next');
+            const indicator = document.getElementById('question-progress-indicator');
+
+            if (currentIndex <= 0) {
+                prevBtn.disabled = true;
+                prevBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            } else {
+                prevBtn.disabled = false;
+                prevBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+            }
+
+            if (currentIndex >= currentFilterList.length - 1) {
+                nextBtn.disabled = true;
+                nextBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            } else {
+                nextBtn.disabled = false;
+                nextBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+            }
+
+            indicator.textContent = `Soal ${currentIndex + 1} dari ${currentFilterList.length}`;
+        }
+
+        function prevQuestion() {
+            const currentIndex = currentFilterList.findIndex(q => q.id === activeQuestionId);
+            if (currentIndex > 0) {
+                showQuestion(currentFilterList[currentIndex - 1].id);
+            }
+        }
+
+        function nextQuestion() {
+            const currentIndex = currentFilterList.findIndex(q => q.id === activeQuestionId);
+            if (currentIndex < currentFilterList.length - 1) {
+                showQuestion(currentFilterList[currentIndex + 1].id);
+            }
+        }
+
+        // Check Individual Question Answer
+        function checkAnswer(qId) {
+            const q = quizData.find(item => item.id === qId);
+            const inputEl = document.getElementById(`input-${qId}`);
+            const feedbackEl = document.getElementById(`feedback-${qId}`);
+            const rawVal = inputEl.value.trim();
+
+            if (!rawVal) {
+                feedbackEl.innerHTML = `<div class="mt-2 text-xs font-bold text-amber-600">⚠️ Isi jawabanmu terlebih dahulu sebelum memeriksa!</div>`;
+                return;
+            }
+
+            const cleanVal = rawVal.toLowerCase().replace(/\s+/g, '');
+            const isCorrect = q.answer.some(ans => ans.toLowerCase().replace(/\s+/g, '') === cleanVal);
+
+            userAnswers[qId] = {
+                text: rawVal,
+                isCorrect: isCorrect
+            };
+
+            saveAnswers();
+            renderNavGrid();
+            updateScoreUI();
+
+            if (isCorrect) {
+                feedbackEl.innerHTML = `<div class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-700 flex items-center gap-2">🎉 Jawaban Kamu BENAR! Sangat Hebat!</div>`;
+            } else {
+                feedbackEl.innerHTML = `<div class="mt-3 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 flex items-center gap-2">❌ Jawaban Belum Tepat. Coba periksa kembali ya!</div>`;
+            }
+        }
+
+        // Category Filter Navigation
+        function filterCategory(cat) {
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-700');
+            });
+            const activeBtn = document.getElementById(`btn-cat-${cat}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
+                activeBtn.classList.add('bg-slate-900', 'text-white');
+            }
+
+            currentFilterList = cat === 'all' ? quizData : quizData.filter(q => q.cat === cat);
+            activeQuestionId = currentFilterList[0].id;
+            
+            renderQuestions();
+            renderNavGrid();
+        }
+
+        // Update Total Score UI
+        function updateScoreUI() {
+            let correctCount = 0;
+            Object.keys(userAnswers).forEach(k => {
+                if (userAnswers[k].isCorrect) correctCount++;
+            });
+            document.getElementById('total-score').textContent = correctCount;
+        }
+
+        // Reset Progress Confirmation
+        function resetAllProgress() {
+            if (confirm("Apakah kamu yakin ingin mereset semua jawaban kuis? Progress jawaban kamu akan dihapus.")) {
+                userAnswers = {};
+                localStorage.removeItem(STORAGE_KEY);
+                renderQuestions();
+                renderNavGrid();
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            loadAnswers();
+            currentFilterList = quizData;
+            renderQuestions();
+            renderNavGrid();
+        };
+    </script>
+</body>
+</html>
